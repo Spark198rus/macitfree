@@ -46,6 +46,26 @@ jobs:
           $CLI test /tmp/smoke.zip
           $CLI list /tmp/smoke.zip | head
 
+      - name: Launch the app and take screenshots
+        run: |
+          mkdir -p build/screenshots
+          open build/MacItFree.app
+          sleep 8
+          pgrep -x MacItFree
+          screencapture -x build/screenshots/1-main-window.png || true
+          build/MacItFree.app/Contents/Resources/bin/mif create /tmp/Demo.zip Sources Tests README.md
+          open -a "$PWD/build/MacItFree.app" /tmp/Demo.zip
+          sleep 6
+          screencapture -x build/screenshots/2-archive-browser.png || true
+          pgrep -x MacItFree
+          osascript -e 'tell application "MacItFree" to quit' || pkill -x MacItFree || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: build/screenshots
+
       - name: Zip app
         run: ditto -c -k --keepParent build/MacItFree.app build/MacItFree.zip
 

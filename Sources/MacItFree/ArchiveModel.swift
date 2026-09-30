@@ -1,5 +1,5 @@
 import AppKit
-import ArchiveKit
+@preconcurrency import ArchiveKit
 import SwiftUI
 import UniformTypeIdentifiers
 
