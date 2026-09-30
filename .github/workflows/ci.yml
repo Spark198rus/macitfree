@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    name: macOS app + tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          swift --version
+          bsdtar --version
+
+      - name: Install optional helper tools
+        run: brew install sevenzip zstd brotli xz lz4 || true
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: swift test
+
+      - name: Build app bundle and DMG
+        run: scripts/build-app.sh --dmg
+
+      - name: Smoke-test the bundled CLI
+        run: |
+          CLI=build/MacItFree.app/Contents/Resources/bin/mif
+          lipo -info "$CLI"
+          $CLI formats
+          $CLI create /tmp/smoke.zip Sources
+          $CLI test /tmp/smoke.zip
+          $CLI list /tmp/smoke.zip | head
+
+      - name: Zip app
+        run: ditto -c -k --keepParent build/MacItFree.app build/MacItFree.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MacItFree
+          path: |
+            build/MacItFree.dmg
+            build/MacItFree.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/MacItFree.dmg
+            build/MacItFree.zip
+          generate_release_notes: true
+
+  linux:
+    name: Core library + CLI (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.1-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install archivers
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends libarchive-tools zip unzip 7zip xz-utils zstd brotli lz4
+      - name: Build
+        run: swift build
+      - name: Test
+        run: swift test
