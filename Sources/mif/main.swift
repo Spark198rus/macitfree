@@ -402,13 +402,13 @@ func cmdFormats(_ args: Arguments) {
         let location = ToolLocator.find(tool)?.path ?? "not installed — \(tool.installHint)"
         print("  " + tool.rawValue.rightPadded(8) + location)
     }
-    print("\nFORMATS" + "".rightPadded(26) + "open  create  encrypt")
+    print("\nFORMATS" + String(repeating: " ", count: 37) + "open  create  encrypt")
     for format in ArchiveFormat.allCases {
         let canOpen = (try? Backends.reader(for: format)) != nil || format == .split
         let canCreate = ArchiveCreator.canCreate(format)
         let canEncrypt = format.supportsEncryption && ArchiveCreator.canCreate(format, encrypted: true)
-        let exts = format.extensions.prefix(4).map { "." + $0 }.joined(separator: " ")
-        print("  " + format.displayName.rightPadded(18) + exts.rightPadded(20)
+        let exts = format.extensions.prefix(3).map { "." + $0 }.joined(separator: " ")
+        print("  " + format.displayName.rightPadded(20) + exts.rightPadded(22)
               + (canOpen ? "yes" : " - ").rightPadded(6) + (canCreate ? "yes" : " - ").rightPadded(8) + (canEncrypt ? "yes" : " - "))
     }
 }

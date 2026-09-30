@@ -106,7 +106,8 @@ public final class Archive {
             contentFormat = inner
         }
         do {
-            entries = try backend().list(workingURL, password: password, cancellation: cancellation)
+            // Drop the archive-root entry (`./`) that some tar files carry.
+            entries = try backend().list(workingURL, password: password, cancellation: cancellation).filter { !$0.path.isEmpty }
         } catch ArchiveError.passwordRequired {
             hasEncryptedListing = true
             throw ArchiveError.passwordRequired
